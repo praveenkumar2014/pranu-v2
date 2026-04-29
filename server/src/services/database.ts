@@ -18,10 +18,6 @@ class DatabaseService {
             log: [{ level: 'warn', emit: 'stdout' }, { level: 'error', emit: 'stdout' }],
         });
 
-        this.prisma.$on('beforeExit', async () => {
-            logger.info('Prisma client beforeExit hook triggered');
-        });
-
         logger.info('Prisma client initialized');
         return this.prisma;
     }

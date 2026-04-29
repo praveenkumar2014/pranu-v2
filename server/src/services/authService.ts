@@ -81,7 +81,7 @@ export class AuthService {
 
     // Refresh access token
     async refreshToken(refreshToken: string): Promise<AuthTokens> {
-        const userId = userService.verifyRefreshToken(refreshToken);
+        const userId = await userService.verifyRefreshToken(refreshToken);
 
         if (!userId) {
             throw new AuthenticationError('Invalid or expired refresh token');

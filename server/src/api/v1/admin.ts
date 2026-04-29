@@ -2,10 +2,10 @@
 // PRANU v2 — Admin & Role Management API
 // ============================================================
 
-import { Router, type Request, type Response } from 'express';
+import { Router, type Response } from 'express';
 import { userService } from '../../services/userService.js';
 import { roleService } from '../../services/roleService.js';
-import { authenticateToken, requireAdmin } from '../../middleware/auth.js';
+import { authenticateToken, requireAdmin, type AuthRequest } from '../../middleware/auth.js';
 import { asyncHandler } from '../../middleware/errorHandler.js';
 import { body, param, query } from 'express-validator';
 import { validateRequest } from '../../middleware/validation.js';
@@ -17,7 +17,7 @@ router.use(authenticateToken);
 router.use(requireAdmin);
 
 // Roles
-router.get('/roles', asyncHandler(async (_req: Request, res: Response) => {
+router.get('/roles', asyncHandler(async (_req: AuthRequest, res: Response) => {
     const roles = await roleService.listRoles();
     res.json({ success: true, data: roles });
 }));
@@ -28,7 +28,7 @@ router.post('/roles',
         body('description').trim().notEmpty().withMessage('Role description is required'),
         body('permissions').isArray().withMessage('Permissions must be an array of strings'),
     ]),
-    asyncHandler(async (req: Request, res: Response) => {
+    asyncHandler(async (req: AuthRequest, res: Response) => {
         const { name, description, permissions } = req.body;
         const role = await roleService.createRole(name, description, permissions);
         res.status(201).json({ success: true, data: role });
@@ -40,8 +40,8 @@ router.put('/roles/:id',
         param('id').trim().notEmpty(),
         body('permissions').isArray().withMessage('Permissions must be an array of strings'),
     ]),
-    asyncHandler(async (req: Request, res: Response) => {
-        const { id } = req.params;
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
         const { permissions } = req.body;
         const role = await roleService.updateRolePermissions(id, permissions);
         res.json({ success: true, data: role });
@@ -54,7 +54,7 @@ router.get('/users',
         query('page').optional().isInt({ min: 1 }).toInt(),
         query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
     ]),
-    asyncHandler(async (req: Request, res: Response) => {
+    asyncHandler(async (req: AuthRequest, res: Response) => {
         const page = parseInt(String(req.query.page || '1'), 10);
         const limit = parseInt(String(req.query.limit || '20'), 10);
         const offset = (page - 1) * limit;
@@ -65,8 +65,9 @@ router.get('/users',
 
 router.get('/users/:id',
     validateRequest([param('id').trim().notEmpty()]),
-    asyncHandler(async (req: Request, res: Response) => {
-        const user = await userService.getUserById(req.params.id);
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+        const user = await userService.getUserById(id);
         if (!user) {
             return res.status(404).json({ success: false, error: { message: 'User not found' } });
         }
@@ -80,8 +81,9 @@ router.put('/users/:id',
         body('name').optional().trim().notEmpty(),
         body('email').optional().isEmail(),
     ]),
-    asyncHandler(async (req: Request, res: Response) => {
-        const user = await userService.updateUser(req.params.id, req.body);
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+        const user = await userService.updateUser(id, req.body);
         res.json({ success: true, data: user });
     })
 );

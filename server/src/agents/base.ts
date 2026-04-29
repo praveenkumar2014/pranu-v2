@@ -10,14 +10,14 @@ import type { ToolResult } from '../types/index.js';
 import { AgentRole, AgentState } from '../types/index.js';
 import type { ToolRegistry, ToolContext } from '../tools/registry.js';
 import type { ShortTermMemory } from '../memory/short-term.js';
-import type { MemoryStore } from '../memory/store.js';
+import { getMemoryStore } from '../memory/store.js';
 
 export interface AgentConfig {
   role: AgentRole;
   systemPrompt: string;
   provider: ILLMProvider;
   toolRegistry: ToolRegistry;
-  memoryStore: MemoryStore;
+  memoryStore: ReturnType<typeof getMemoryStore>;
   shortTermMemory: ShortTermMemory;
   maxIterations: number;
   stepTimeout: number;
@@ -34,7 +34,7 @@ export abstract class BaseAgent extends EventEmitter {
   protected systemPrompt: string;
   protected provider: ILLMProvider;
   protected toolRegistry: ToolRegistry;
-  protected memoryStore: MemoryStore;
+  protected memoryStore: ReturnType<typeof getMemoryStore>;
   protected shortTermMemory: ShortTermMemory;
   protected maxIterations: number;
   protected stepTimeout: number;

@@ -103,7 +103,7 @@ router.post('/logout',
 router.post('/logout-all',
     authenticateToken,
     asyncHandler(async (req: AuthRequest, res: Response) => {
-        const userId = req.user!.userId;
+        const userId = req.jwtUser!.userId;
         authService.logoutAll(userId);
 
         res.json({
@@ -117,8 +117,8 @@ router.post('/logout-all',
 router.get('/profile',
     authenticateToken,
     asyncHandler(async (req: AuthRequest, res: Response) => {
-        const userId = req.user!.userId;
-        const profile = authService.getProfile(userId);
+        const userId = req.jwtUser!.userId;
+        const profile = await authService.getProfile(userId);
 
         res.json({
             success: true,
@@ -135,7 +135,7 @@ router.put('/profile',
         body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
     ]),
     asyncHandler(async (req: AuthRequest, res: Response) => {
-        const userId = req.user!.userId;
+        const userId = req.jwtUser!.userId;
         const updates = req.body;
 
         const updatedProfile = await authService.updateProfile(userId, updates);

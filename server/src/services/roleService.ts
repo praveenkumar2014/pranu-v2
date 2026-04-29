@@ -7,21 +7,25 @@ import { PrismaClient, Role } from '@prisma/client';
 import { logger } from '../utils/logger.js';
 
 const DEFAULT_ROLES = [
-    { name: 'ADMIN', description: 'Super administrator with full access', permissions: [
-        'users.manage',
-        'workflow.manage',
-        'cms.manage',
-        'billing.manage',
-        'ai.manage',
-        'storage.manage',
-    ] },
-    { name: 'USER', description: 'Standard workspace user', permissions: [
-        'tasks.create',
-        'tasks.view',
-        'ai.use',
-        'content.create',
-        'storage.upload',
-    ] },
+    {
+        name: 'ADMIN', description: 'Super administrator with full access', permissions: [
+            'users.manage',
+            'workflow.manage',
+            'cms.manage',
+            'billing.manage',
+            'ai.manage',
+            'storage.manage',
+        ]
+    },
+    {
+        name: 'USER', description: 'Standard workspace user', permissions: [
+            'tasks.create',
+            'tasks.view',
+            'ai.use',
+            'content.create',
+            'storage.upload',
+        ]
+    },
 ];
 
 export class RoleService {
@@ -71,7 +75,8 @@ export class RoleService {
             include: { role: true },
         });
 
-        return !!user?.role.permissions?.includes(permission);
+        const permissions = user?.role.permissions as unknown as string[] | undefined;
+        return !!permissions?.includes(permission);
     }
 }
 

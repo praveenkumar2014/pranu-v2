@@ -1,265 +1,150 @@
 // ============================================================
-// PRANU v2 — Memory Store (SQLite-backed)
+// PRANU v2 — Memory Store
+// Simple in-memory storage for AI agent state
 // ============================================================
 
-import Database from 'better-sqlite3';
-import { mkdirSync } from 'fs';
-import { dirname } from 'path';
-import { config } from '../config.js';
+import { logger } from '../utils/logger.js';
 
-export class MemoryStore {
-    private db: Database.Database;
+class MemoryStore {
+    private memories: Map<string, string> = new Map();
+    private tasks: Map<string, any> = new Map();
+    private steps: Map<string, any> = new Map();
+    private actions: Map<string, any> = new Map();
+    private codebaseIndex: Map<string, any> = new Map();
+    private patterns: Map<string, any> = new Map();
 
-    constructor(dbPath?: string) {
-        const path = dbPath ?? config.DB_PATH;
-        // Ensure directory exists
-        mkdirSync(dirname(path), { recursive: true });
-
-        this.db = new Database(path);
-        this.db.pragma('journal_mode = WAL');
-        this.initialize();
+    constructor() {
+        logger.info('Memory store initialized (in-memory mode)');
     }
 
-    private initialize(): void {
-        this.db.exec(`
-      CREATE TABLE IF NOT EXISTS tasks (
-        id TEXT PRIMARY KEY,
-        description TEXT NOT NULL,
-        status TEXT NOT NULL,
-        workspace_path TEXT,
-        plan_json TEXT,
-        summary TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        completed_at DATETIME
-      );
+    // ---- Memory operations ----
 
-      CREATE TABLE IF NOT EXISTS task_steps (
-        id TEXT PRIMARY KEY,
-        task_id TEXT REFERENCES tasks(id),
-        step_number INTEGER,
-        description TEXT NOT NULL,
-        status TEXT NOT NULL,
-        acceptance_criteria TEXT,
-        tool_hint TEXT,
-        result_summary TEXT,
-        retry_count INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        completed_at DATETIME
-      );
+    async set(key: string, value: string): Promise<void> {
+        this.memories.set(key, value);
+    }
 
-      CREATE TABLE IF NOT EXISTS agent_actions (
-        id TEXT PRIMARY KEY,
-        task_id TEXT REFERENCES tasks(id),
-        step_id TEXT REFERENCES task_steps(id),
-        agent_name TEXT NOT NULL,
-        action_type TEXT NOT NULL,
-        tool_name TEXT,
-        input_json TEXT,
-        output_json TEXT,
-        duration_ms INTEGER,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
+    async get(key: string): Promise<string | null> {
+        return this.memories.get(key) || null;
+    }
 
-      CREATE TABLE IF NOT EXISTS codebase_index (
-        id TEXT PRIMARY KEY,
-        file_path TEXT NOT NULL UNIQUE,
-        language TEXT,
-        line_count INTEGER,
-        imports_json TEXT,
-        last_modified DATETIME,
-        content_hash TEXT
-      );
+    async delete(key: string): Promise<void> {
+        this.memories.delete(key);
+    }
 
-      CREATE TABLE IF NOT EXISTS patterns (
-        id TEXT PRIMARY KEY,
-        pattern_type TEXT NOT NULL,
-        description TEXT NOT NULL,
-        context_tags TEXT,
-        occurrence_count INTEGER DEFAULT 1,
-        last_seen DATETIME,
-        example_json TEXT
-      );
-    `);
+    async clear(): Promise<void> {
+        this.memories.clear();
+    }
+
+    async getAll(): Promise<Record<string, string>> {
+        return Object.fromEntries(this.memories);
     }
 
     // ---- Task operations ----
 
-    createTask(task: {
-        id: string;
-        description: string;
-        status: string;
-        workspacePath: string;
-    }): void {
-        this.db
-            .prepare('INSERT INTO tasks (id, description, status, workspace_path) VALUES (?, ?, ?, ?)')
-            .run(task.id, task.description, task.status, task.workspacePath);
+    createTask(task: any): void {
+        this.tasks.set(task.id, { ...task, createdAt: Date.now() });
     }
 
     updateTaskStatus(id: string, status: string, summary?: string): void {
-        if (summary) {
-            this.db
-                .prepare('UPDATE tasks SET status = ?, summary = ? WHERE id = ?')
-                .run(status, summary, id);
-        } else {
-            this.db
-                .prepare('UPDATE tasks SET status = ? WHERE id = ?')
-                .run(status, id);
+        const task = this.tasks.get(id);
+        if (task) {
+            this.tasks.set(id, { ...task, status, summary });
         }
     }
 
     completeTask(id: string, summary: string): void {
-        this.db
-            .prepare('UPDATE tasks SET status = ?, summary = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?')
-            .run('completed', summary, id);
+        const task = this.tasks.get(id);
+        if (task) {
+            this.tasks.set(id, { ...task, status: 'completed', summary, completedAt: Date.now() });
+        }
     }
 
-    getTask(id: string): Record<string, unknown> | undefined {
-        return this.db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+    getTask(id: string): any {
+        return this.tasks.get(id);
     }
 
-    getAllTasks(): Record<string, unknown>[] {
-        return this.db.prepare('SELECT * FROM tasks ORDER BY created_at DESC').all() as Record<string, unknown>[];
+    getAllTasks(): any[] {
+        return Array.from(this.tasks.values()).sort((a, b) => b.createdAt - a.createdAt);
     }
 
     // ---- Step operations ----
 
-    createStep(step: {
-        id: string;
-        taskId: string;
-        stepNumber: number;
-        description: string;
-        status: string;
-        acceptanceCriteria: string;
-        toolHint: string;
-    }): void {
-        this.db
-            .prepare(`INSERT INTO task_steps (id, task_id, step_number, description, status, acceptance_criteria, tool_hint)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`)
-            .run(step.id, step.taskId, step.stepNumber, step.description, step.status, step.acceptanceCriteria, step.toolHint);
+    createStep(step: any): void {
+        this.steps.set(step.id, step);
     }
 
     updateStepStatus(id: string, status: string, resultSummary?: string): void {
-        if (resultSummary) {
-            this.db
-                .prepare('UPDATE task_steps SET status = ?, result_summary = ? WHERE id = ?')
-                .run(status, resultSummary, id);
-        } else {
-            this.db
-                .prepare('UPDATE task_steps SET status = ? WHERE id = ?')
-                .run(status, id);
+        const step = this.steps.get(id);
+        if (step) {
+            this.steps.set(id, { ...step, status, resultSummary });
         }
     }
 
     incrementStepRetry(id: string): void {
-        this.db
-            .prepare('UPDATE task_steps SET retry_count = retry_count + 1 WHERE id = ?')
-            .run(id);
+        const step = this.steps.get(id);
+        if (step) {
+            this.steps.set(id, { ...step, retryCount: (step.retryCount || 0) + 1 });
+        }
     }
 
-    getStepsForTask(taskId: string): Record<string, unknown>[] {
-        return this.db
-            .prepare('SELECT * FROM task_steps WHERE task_id = ? ORDER BY step_number')
-            .all(taskId) as Record<string, unknown>[];
+    getStepsForTask(taskId: string): any[] {
+        return Array.from(this.steps.values())
+            .filter(step => step.taskId === taskId)
+            .sort((a, b) => a.stepNumber - b.stepNumber);
     }
 
     // ---- Action logging ----
 
-    logAction(action: {
-        id: string;
-        taskId: string;
-        stepId: string;
-        agentName: string;
-        actionType: string;
-        toolName?: string;
-        inputJson?: string;
-        outputJson?: string;
-        durationMs?: number;
-    }): void {
-        this.db
-            .prepare(`INSERT INTO agent_actions (id, task_id, step_id, agent_name, action_type, tool_name, input_json, output_json, duration_ms)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-            .run(
-                action.id,
-                action.taskId,
-                action.stepId,
-                action.agentName,
-                action.actionType,
-                action.toolName ?? null,
-                action.inputJson ?? null,
-                action.outputJson ?? null,
-                action.durationMs ?? null
-            );
+    logAction(action: any): void {
+        this.actions.set(action.id, { ...action, createdAt: Date.now() });
     }
 
-    getActionsForTask(taskId: string): Record<string, unknown>[] {
-        return this.db
-            .prepare('SELECT * FROM agent_actions WHERE task_id = ? ORDER BY created_at')
-            .all(taskId) as Record<string, unknown>[];
+    getActionsForTask(taskId: string): any[] {
+        return Array.from(this.actions.values())
+            .filter(action => action.taskId === taskId)
+            .sort((a, b) => a.createdAt - b.createdAt);
     }
 
     // ---- Codebase index ----
 
-    upsertFileIndex(entry: {
-        id: string;
-        filePath: string;
-        language: string;
-        lineCount: number;
-        importsJson?: string;
-        contentHash: string;
-    }): void {
-        this.db
-            .prepare(`INSERT INTO codebase_index (id, file_path, language, line_count, imports_json, last_modified, content_hash)
-        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
-        ON CONFLICT(file_path) DO UPDATE SET
-          language = excluded.language,
-          line_count = excluded.line_count,
-          imports_json = excluded.imports_json,
-          last_modified = CURRENT_TIMESTAMP,
-          content_hash = excluded.content_hash`)
-            .run(entry.id, entry.filePath, entry.language, entry.lineCount, entry.importsJson ?? null, entry.contentHash);
+    upsertFileIndex(entry: any): void {
+        this.codebaseIndex.set(entry.filePath, { ...entry, lastModified: Date.now() });
     }
 
-    searchCodebase(query: string, limit = 20): Record<string, unknown>[] {
-        return this.db
-            .prepare('SELECT * FROM codebase_index WHERE file_path LIKE ? LIMIT ?')
-            .all(`%${query}%`, limit) as Record<string, unknown>[];
+    searchCodebase(query: string, limit = 20): any[] {
+        const results = Array.from(this.codebaseIndex.values())
+            .filter(entry => entry.filePath.toLowerCase().includes(query.toLowerCase()));
+        return results.slice(0, limit);
     }
 
     // ---- Patterns ----
 
-    upsertPattern(pattern: {
-        id: string;
-        patternType: string;
-        description: string;
-        contextTags?: string;
-        exampleJson?: string;
-    }): void {
-        const existing = this.db
-            .prepare('SELECT id, occurrence_count FROM patterns WHERE pattern_type = ? AND description = ?')
-            .get(pattern.patternType, pattern.description) as Record<string, unknown> | undefined;
+    upsertPattern(pattern: any): void {
+        const existing = Array.from(this.patterns.values())
+            .find(p => p.patternType === pattern.patternType && p.description === pattern.description);
 
         if (existing) {
-            this.db
-                .prepare('UPDATE patterns SET occurrence_count = occurrence_count + 1, last_seen = CURRENT_TIMESTAMP WHERE id = ?')
-                .run(existing.id as string);
+            this.patterns.set(existing.id, { ...existing, occurrenceCount: (existing.occurrenceCount || 0) + 1, lastSeen: Date.now() });
         } else {
-            this.db
-                .prepare(`INSERT INTO patterns (id, pattern_type, description, context_tags, example_json)
-          VALUES (?, ?, ?, ?, ?)`)
-                .run(pattern.id, pattern.patternType, pattern.description, pattern.contextTags ?? null, pattern.exampleJson ?? null);
+            this.patterns.set(pattern.id, { ...pattern, occurrenceCount: 1, lastSeen: Date.now() });
         }
     }
 
-    getRelevantPatterns(tags: string[], limit = 10): Record<string, unknown>[] {
-        const placeholders = tags.map(() => 'context_tags LIKE ?').join(' OR ');
-        if (!placeholders) return [];
-        return this.db
-            .prepare(`SELECT * FROM patterns WHERE ${placeholders} ORDER BY occurrence_count DESC LIMIT ?`)
-            .all(...tags.map((t) => `%${t}%`), limit) as Record<string, unknown>[];
+    getRelevantPatterns(tags: string[], limit = 10): any[] {
+        const results = Array.from(this.patterns.values())
+            .filter(pattern => tags.some(tag => pattern.contextTags?.includes(tag)))
+            .sort((a, b) => b.occurrenceCount - a.occurrenceCount);
+        return results.slice(0, limit);
     }
 
     close(): void {
-        this.db.close();
+        this.memories.clear();
+        this.tasks.clear();
+        this.steps.clear();
+        this.actions.clear();
+        this.codebaseIndex.clear();
+        this.patterns.clear();
+        logger.info('Memory store closed');
     }
 }
 

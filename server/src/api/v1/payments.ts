@@ -3,9 +3,9 @@
 // Subscription and payment tracking.
 // ============================================================
 
-import { Router, type Request, type Response } from 'express';
+import { Router, type Response } from 'express';
 import { databaseService } from '../../services/database.js';
-import { authenticateToken } from '../../middleware/auth.js';
+import { authenticateToken, type AuthRequest } from '../../middleware/auth.js';
 import { asyncHandler } from '../../middleware/errorHandler.js';
 import { body } from 'express-validator';
 import { validateRequest } from '../../middleware/validation.js';
@@ -21,7 +21,7 @@ router.post('/subscriptions',
         body('amount').isFloat({ gt: 0 }).withMessage('Amount must be a positive number'),
         body('currency').trim().notEmpty().withMessage('Currency is required'),
     ]),
-    asyncHandler(async (req: Request, res: Response) => {
+    asyncHandler(async (req: AuthRequest, res: Response) => {
         const { plan, amount, currency, provider } = req.body;
         const subscription = await db.paymentSubscription.create({
             data: {
@@ -31,7 +31,7 @@ router.post('/subscriptions',
                 amount: Number(amount),
                 currency,
                 metadata: { source: 'frontend' },
-                user: { connect: { id: req.user!.userId } },
+                user: { connect: { id: req.jwtUser!.userId } },
             },
         });
         res.status(201).json({ success: true, data: subscription });
@@ -40,9 +40,9 @@ router.post('/subscriptions',
 
 router.get('/subscriptions',
     authenticateToken,
-    asyncHandler(async (req: Request, res: Response) => {
+    asyncHandler(async (req: AuthRequest, res: Response) => {
         const subscriptions = await db.paymentSubscription.findMany({
-            where: { userId: req.user!.userId },
+            where: { userId: req.jwtUser!.userId },
             orderBy: { createdAt: 'desc' },
         });
         res.json({ success: true, data: subscriptions });
@@ -52,9 +52,10 @@ router.get('/subscriptions',
 router.post('/subscriptions/:id/confirm',
     authenticateToken,
     validateRequest([body('status').trim().notEmpty().withMessage('Status is required')]),
-    asyncHandler(async (req: Request, res: Response) => {
+    asyncHandler(async (req: AuthRequest, res: Response) => {
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
         const updated = await db.paymentSubscription.update({
-            where: { id: req.params.id },
+            where: { id },
             data: { status: req.body.status },
         });
         res.json({ success: true, data: updated });

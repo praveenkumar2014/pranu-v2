@@ -65,7 +65,7 @@ export class StorageService {
                 key,
                 bucket: this.bucket ?? 'local',
                 url,
-                metadata: metadata ?? {},
+                metadata: (metadata ?? {}) as any,
                 user: userId ? { connect: { id: userId } } : undefined,
             },
         });

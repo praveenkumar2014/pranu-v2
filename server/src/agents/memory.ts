@@ -40,14 +40,14 @@ export class MemoryAgent extends BaseAgent {
 
         const pastTasks = this.memoryStore.getAllTasks();
         const completedTasks = pastTasks.filter(
-            (t) => t.status === 'completed' && t.description
+            (t: any) => t.status === 'completed' && t.description
         );
 
         if (completedTasks.length > 0) {
             const keywords = taskDescription.toLowerCase().split(/\s+/);
-            const relevant = completedTasks.filter((t) => {
+            const relevant = completedTasks.filter((t: any) => {
                 const desc = String(t.description).toLowerCase();
-                return keywords.some((kw) => kw.length > 3 && desc.includes(kw));
+                return keywords.some((kw: string) => kw.length > 3 && desc.includes(kw));
             }).slice(0, 3);
 
             if (relevant.length > 0) {
