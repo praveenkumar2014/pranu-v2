@@ -140,9 +140,8 @@ export default function AnalyticsPage() {
                                         <td className="py-3 text-sm text-slate-400">{row.model}</td>
                                         <td className="py-3 text-sm text-slate-500">{row.time}</td>
                                         <td className="py-3">
-                                            <span className={`rounded-full px-2 py-1 text-xs ${
-                                                row.status === 'Success' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
-                                            }`}>
+                                            <span className={`rounded-full px-2 py-1 text-xs ${row.status === 'Success' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                                                }`}>
                                                 {row.status}
                                             </span>
                                         </td>

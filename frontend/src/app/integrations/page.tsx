@@ -40,16 +40,14 @@ export default function IntegrationsPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
-                            className={`rounded-[24px] border p-6 transition-all hover:shadow-lg ${
-                                integration.connected
+                            className={`rounded-[24px] border p-6 transition-all hover:shadow-lg ${integration.connected
                                     ? 'border-cyan-500/30 bg-slate-900/80 shadow-cyan-500/10'
                                     : 'border-slate-800 bg-slate-900/50'
-                            }`}
+                                }`}
                         >
                             <div className="flex items-start justify-between mb-4">
-                                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
-                                    integration.connected ? 'bg-cyan-500/10 text-cyan-400' : 'bg-slate-800 text-slate-400'
-                                }`}>
+                                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${integration.connected ? 'bg-cyan-500/10 text-cyan-400' : 'bg-slate-800 text-slate-400'
+                                    }`}>
                                     <integration.icon className="h-6 w-6" />
                                 </div>
                                 {integration.connected ? (
