@@ -9,6 +9,10 @@ const envSchema = z.object({
     WS_PORT: z.coerce.number().default(4001),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
+    // Database
+    DATABASE_PROVIDER: z.enum(['sqlite', 'postgresql']).default('sqlite'),
+    DATABASE_URL: z.string().default('file:./data/pranu.db'),
+
     // LLM API Keys
     GROQ_API_KEY: z.string().optional(),
     GROQ_MODEL: z.string().default('llama-3.1-70b-versatile'),
@@ -20,6 +24,7 @@ const envSchema = z.object({
 
     OPENAI_API_KEY: z.string().optional(),
     OPENAI_MODEL: z.string().default('gpt-4o'),
+    OPENAI_BASE_URL: z.string().default('https://api.openai.com/v1'),
 
     // Sandbox
     SANDBOX_ENABLED: z.coerce.boolean().default(false),
@@ -31,14 +36,28 @@ const envSchema = z.object({
     // Workspace
     WORKSPACE_PATH: z.string().default('/tmp/pranu-workspace'),
 
-    // Memory
-    DB_PATH: z.string().default('./data/pranu.db'),
-
     // Authentication
     JWT_SECRET: z.string().default('dev-secret-change-in-production'),
     JWT_EXPIRES_IN: z.string().default('7d'),
     JWT_REFRESH_SECRET: z.string().default('dev-refresh-secret-change-in-production'),
     JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
+    FRONTEND_URL: z.string().default('http://localhost:3000'),
+
+    // OAuth
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    OAUTH_CALLBACK_URL: z.string().default('http://localhost:4000/api/v1/auth/oauth/google/callback'),
+
+    // S3 Storage
+    S3_ENDPOINT: z.string().optional(),
+    S3_REGION: z.string().optional(),
+    S3_ACCESS_KEY_ID: z.string().optional(),
+    S3_SECRET_ACCESS_KEY: z.string().optional(),
+    S3_BUCKET: z.string().optional(),
+
+    // Billing
+    UPI_PROVIDER: z.string().optional(),
+    BILLING_EMAIL: z.string().optional(),
 });
 
 export type Config = z.infer<typeof envSchema>;
@@ -47,7 +66,6 @@ function loadConfig(): Config {
     const result = envSchema.safeParse(process.env);
     if (!result.success) {
         console.warn('⚠ Config validation warnings:', result.error.flatten().fieldErrors);
-        // Use defaults for missing optional fields
         return envSchema.parse({});
     }
     return result.data;
@@ -55,7 +73,6 @@ function loadConfig(): Config {
 
 export const config = loadConfig();
 
-// LLM Provider configurations
 export const LLM_PROVIDERS = {
     groq: {
         name: 'groq',
@@ -72,12 +89,11 @@ export const LLM_PROVIDERS = {
     openai: {
         name: 'openai',
         apiKey: config.OPENAI_API_KEY || '',
-        baseURL: 'https://api.openai.com/v1',
+        baseURL: config.OPENAI_BASE_URL,
         model: config.OPENAI_MODEL,
     },
 } as const;
 
-// Task type → provider routing
 export const LLM_ROUTING = {
     planning: 'openai' as const,
     coding: 'together' as const,

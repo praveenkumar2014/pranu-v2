@@ -13,6 +13,10 @@ import { asyncHandler } from '../../middleware/errorHandler.js';
 import { NotFoundError, ValidationError } from '../../middleware/errorHandler.js';
 import { validateRequest, taskValidations, taskIdParam, paginationQuery, taskFilterQuery } from '../../middleware/validation.js';
 import { authRouter } from './auth.js';
+import { adminRouter } from './admin.js';
+import { cmsRouter } from './cms.js';
+import { aiRouter } from './ai.js';
+import { paymentsRouter } from './payments.js';
 
 import type { Router as RouterType } from "express";
 const router: RouterType = Router();
@@ -20,6 +24,10 @@ const memoryStore = getMemoryStore();
 
 // Mount auth routes
 router.use('/auth', authRouter);
+router.use('/admin', adminRouter);
+router.use('/cms', cmsRouter);
+router.use('/ai', aiRouter);
+router.use('/payments', paymentsRouter);
 
 // ---- Tasks ----
 

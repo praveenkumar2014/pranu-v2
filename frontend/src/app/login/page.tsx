@@ -1,10 +1,10 @@
 // ============================================================
-// PRANU v2 — Login Page
+// GS Groups AI Studio — Login
 // ============================================================
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/authStore';
@@ -12,26 +12,31 @@ import { api } from '@/lib/api';
 
 export default function LoginPage() {
     const router = useRouter();
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const setAuth = useAuthStore((state) => state.setAuth);
-    const setLoading = useAuthStore((state) => state.setLoading);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.replace('/dashboard');
+        }
+    }, [isAuthenticated, router]);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
         setIsSubmitting(true);
-        setLoading(true);
 
         try {
             const response: any = await api.login({ email, password });
 
             if (response.success && response.data) {
                 setAuth(response.data.user, response.data.tokens);
-                router.push('/');
+                router.push('/dashboard');
             } else {
                 setError(response.error?.message || 'Login failed');
             }
@@ -39,99 +44,54 @@ export default function LoginPage() {
             setError(err.message || 'Invalid email or password');
         } finally {
             setIsSubmitting(false);
-            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-pranu-bg px-4">
-            <div className="max-w-md w-full space-y-8">
-                {/* Header */}
-                <div className="text-center">
-                    <div className="flex justify-center">
-                        <div className="w-12 h-12 rounded-full bg-pranu-cyan animate-pulse-glow" />
-                    </div>
-                    <h2 className="mt-6 text-3xl font-bold text-pranu-text">
-                        Welcome back
-                    </h2>
-                    <p className="mt-2 text-sm text-pranu-text-muted">
-                        Sign in to your PRANU v2 account
-                    </p>
+        <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4 py-16 text-slate-100">
+            <div className="w-full max-w-lg space-y-8 rounded-[32px] border border-slate-800 bg-slate-900/95 p-10 shadow-2xl shadow-cyan-500/10">
+                <div className="space-y-3 text-center">
+                    <p className="text-sm uppercase tracking-[0.4em] text-cyan-300">Sign in</p>
+                    <h1 className="text-4xl font-semibold text-white">Access your AI workspace</h1>
+                    <p className="text-slate-400">Login to manage workflows, content, code, and analytics in one secure platform.</p>
                 </div>
-
-                {/* Login Form */}
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                            {error}
-                        </div>
-                    )}
-
-                    <div className="space-y-4">
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-pranu-text mb-1">
-                                Email address
-                            </label>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && <div className="rounded-3xl border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>}
+                    <div className="grid gap-5">
+                        <label className="block text-sm font-medium text-slate-200">
+                            Email address
                             <input
-                                id="email"
-                                name="email"
                                 type="email"
-                                autoComplete="email"
-                                required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-2 border border-pranu-border rounded-lg bg-pranu-surface text-pranu-text focus:outline-none focus:ring-2 focus:ring-pranu-cyan focus:border-transparent"
-                                placeholder="you@example.com"
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-pranu-text mb-1">
-                                Password
-                            </label>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                autoComplete="current-password"
                                 required
+                                className="mt-3 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30"
+                                placeholder="you@company.com"
+                            />
+                        </label>
+                        <label className="block text-sm font-medium text-slate-200">
+                            Password
+                            <input
+                                type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-2 border border-pranu-border rounded-lg bg-pranu-surface text-pranu-text focus:outline-none focus:ring-2 focus:ring-pranu-cyan focus:border-transparent"
-                                placeholder="••••••••"
+                                required
+                                className="mt-3 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30"
+                                placeholder="Enter your password"
                             />
-                        </div>
+                        </label>
                     </div>
-
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-pranu-cyan hover:bg-pranu-cyan/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pranu-cyan disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {isSubmitting ? (
-                                <div className="flex items-center">
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Signing in...
-                                </div>
-                            ) : (
-                                'Sign in'
-                            )}
-                        </button>
-                    </div>
-
-                    <div className="text-center text-sm">
-                        <span className="text-pranu-text-muted">
-                            Don't have an account?{' '}
-                        </span>
-                        <Link href="/register" className="font-medium text-pranu-cyan hover:text-pranu-cyan/80">
-                            Sign up
-                        </Link>
-                    </div>
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="flex w-full items-center justify-center rounded-full bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                        {isSubmitting ? 'Signing in…' : 'Sign in'}
+                    </button>
                 </form>
+                <p className="text-center text-sm text-slate-500">
+                    New to GS Groups? <Link href="/register" className="font-semibold text-cyan-300 hover:text-cyan-200">Create your account</Link>
+                </p>
             </div>
         </div>
     );

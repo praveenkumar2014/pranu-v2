@@ -7,11 +7,12 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { AuthenticationError, AuthorizationError } from './errorHandler.js';
+import { roleService } from '../services/roleService.js';
 
 export interface JwtPayload {
     userId: string;
     email: string;
-    role: 'admin' | 'user';
+    role: string;
 }
 
 export interface AuthRequest extends Request {
@@ -59,7 +60,7 @@ export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction
 }
 
 // Role-based access control
-export function requireRole(...roles: Array<'admin' | 'user'>) {
+export function requireRole(...roles: string[]) {
     return (req: AuthRequest, res: Response, next: NextFunction) => {
         if (!req.user) {
             throw new AuthenticationError('Authentication required');
@@ -73,5 +74,20 @@ export function requireRole(...roles: Array<'admin' | 'user'>) {
     };
 }
 
+export function requirePermission(permission: string) {
+    return async (req: AuthRequest, res: Response, next: NextFunction) => {
+        if (!req.user) {
+            throw new AuthenticationError('Authentication required');
+        }
+
+        const hasPermission = await roleService.userHasPermission(req.user.userId, permission);
+        if (!hasPermission) {
+            throw new AuthorizationError('Insufficient permissions');
+        }
+
+        next();
+    };
+}
+
 // Admin only
-export const requireAdmin = requireRole('admin');
+export const requireAdmin = requireRole('ADMIN');

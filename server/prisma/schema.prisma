@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER")
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String            @id @default(cuid())
+  email          String            @unique
+  password       String?
+  name           String
+  role           Role              @relation(fields: [roleId], references: [id])
+  roleId         String
+  emailVerified  Boolean           @default(false)
+  oauthProvider  String?
+  oauthId        String?
+  refreshTokens  RefreshToken[]
+  tasks          Task[]
+  workflows      Workflow[]
+  sessions       Session[]
+  aiChats        AIChat[]
+  contentItems   ContentItem[]
+  auditLogs      AuditLog[]
+  payments       PaymentSubscription[]
+  storageObjects StorageObject[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  permissions Json     @default("[]")
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum TaskStatus {
+  PENDING
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum WorkflowStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  PAUSED
+}
+
+enum ContentType {
+  BLOG
+  POST
+  AD
+  SCRIPT
+  IMAGE
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id          String      @id @default(cuid())
+  title       String?
+  description String
+  status      TaskStatus  @default(PENDING)
+  metadata    Json?
+  user        User?       @relation(fields: [userId], references: [id])
+  userId      String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Workflow {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  status      WorkflowStatus @default(PENDING)
+  steps       Json?
+  owner       User?          @relation(fields: [ownerId], references: [id])
+  ownerId     String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model AIChat {
+  id          String      @id @default(cuid())
+  title       String?
+  conversation Json      @default("[]")
+  model       String
+  provider    String
+  user        User?       @relation(fields: [userId], references: [id])
+  userId      String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model ContentItem {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  type        ContentType
+  status      ContentStatus  @default(DRAFT)
+  metadata    Json?
+  user        User?          @relation(fields: [userId], references: [id])
+  userId      String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model PaymentSubscription {
+  id          String   @id @default(cuid())
+  provider    String
+  plan        String
+  status      String   @default("active")
+  amount      Float
+  currency    String   @default("INR")
+  metadata    Json?
+  user        User?    @relation(fields: [userId], references: [id])
+  userId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model StorageObject {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  bucket    String
+  url       String
+  metadata  Json?
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  details   String?
+  metadata  Json?
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  createdAt DateTime @default(now())
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  type      String
+  data      Json?
+  expiresAt DateTime
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  createdAt DateTime @default(now())
+}

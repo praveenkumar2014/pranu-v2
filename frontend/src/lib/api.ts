@@ -90,7 +90,7 @@ class ApiClient {
     }
 
     async logout(refreshToken: string) {
-        return this.post('/auth/logout', { refreshToken });
+        return this.post('/auth/logout', { refreshToken }, { requiresAuth: true });
     }
 
     async getProfile() {
@@ -99,6 +99,14 @@ class ApiClient {
 
     async updateProfile(data: { name?: string; email?: string }) {
         return this.put('/auth/profile', data, { requiresAuth: true });
+    }
+
+    async chat(data: { messages: Array<{ role: string; content: string }> }) {
+        return this.post('/ai/chat', data, { requiresAuth: true });
+    }
+
+    async generateContent(data: { prompt: string; type: string }) {
+        return this.post('/ai/generate', data, { requiresAuth: true });
     }
 
     // Task endpoints

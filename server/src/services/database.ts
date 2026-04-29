@@ -1,50 +1,42 @@
 // ============================================================
 // PRANU v2 — Database Service
-// Centralized database connection and management
+// Uses Prisma for PostgreSQL / SQLite support
 // ============================================================
 
-import Database from 'better-sqlite3';
-import { config } from '../config.js';
+import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger.js';
-import { mkdirSync, existsSync } from 'fs';
-import { dirname } from 'path';
 
 class DatabaseService {
-    private db: Database.Database | null = null;
+    private prisma: PrismaClient | null = null;
 
-    initialize(): Database.Database {
-        if (this.db) {
-            return this.db;
+    initialize(): PrismaClient {
+        if (this.prisma) {
+            return this.prisma;
         }
 
-        // Ensure data directory exists
-        const dbPath = config.DB_PATH;
-        const dbDir = dirname(dbPath);
+        this.prisma = new PrismaClient({
+            log: [{ level: 'warn', emit: 'stdout' }, { level: 'error', emit: 'stdout' }],
+        });
 
-        if (!existsSync(dbDir)) {
-            mkdirSync(dbDir, { recursive: true });
-            logger.info(`Created database directory: ${dbDir}`);
-        }
+        this.prisma.$on('beforeExit', async () => {
+            logger.info('Prisma client beforeExit hook triggered');
+        });
 
-        this.db = new Database(dbPath);
-        this.db.pragma('journal_mode = WAL');
-        this.db.pragma('foreign_keys = ON');
-
-        logger.info(`Database initialized: ${dbPath}`);
-        return this.db;
+        logger.info('Prisma client initialized');
+        return this.prisma;
     }
 
-    getDatabase(): Database.Database {
-        if (!this.db) {
+    getClient(): PrismaClient {
+        if (!this.prisma) {
             return this.initialize();
         }
-        return this.db;
+        return this.prisma;
     }
 
-    close(): void {
-        if (this.db) {
-            this.db.close();
-            logger.info('Database connection closed');
+    async disconnect(): Promise<void> {
+        if (this.prisma) {
+            await this.prisma.$disconnect();
+            logger.info('Prisma connection closed');
         }
     }
 }
