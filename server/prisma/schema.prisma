@@ -12,11 +12,13 @@ model User {
   email          String            @unique
   password       String?
   name           String
+  avatar         String?
   role           Role              @relation(fields: [roleId], references: [id])
   roleId         String
   emailVerified  Boolean           @default(false)
   oauthProvider  String?
   oauthId        String?
+  subscription   Subscription?
   refreshTokens  RefreshToken[]
   tasks          Task[]
   workflows      Workflow[]
@@ -24,8 +26,12 @@ model User {
   aiChats        AIChat[]
   contentItems   ContentItem[]
   auditLogs      AuditLog[]
-  payments       PaymentSubscription[]
+  payments       Payment[]
   storageObjects StorageObject[]
+  socialAccounts SocialAccount[]
+  seoProjects    SEOProject[]
+  apiKeys        ApiKey[]
+  workflowLogs   WorkflowLog[]
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 }
@@ -35,46 +41,46 @@ model Role {
   name        String   @unique
   description String?
   permissions Json     @default("[]")
+  isDefault   Boolean  @default(false)
   users       User[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-enum TaskStatus {
-  PENDING
-  RUNNING
-  PAUSED
-  COMPLETED
-  FAILED
-  CANCELED
+model Subscription {
+  id            String    @id @default(cuid())
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String    @unique
+  plan          String    @default("free")
+  status        String    @default("active")
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd Boolean @default(false)
+  usageLimit    Int       @default(100)
+  usageCount    Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
-enum WorkflowStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
-  PAUSED
-}
-
-enum ContentType {
-  BLOG
-  POST
-  AD
-  SCRIPT
-  IMAGE
-}
-
-enum ContentStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
+model ApiKey {
+  id          String   @id @default(cuid())
+  name        String
+  key         String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  permissions Json     @default("[]")
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 }
 
 model RefreshToken {
   id        String   @id @default(cuid())
   token     String   @unique
   expiresAt DateTime
+  userAgent String?
+  ipAddress String?
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
@@ -85,11 +91,28 @@ model Task {
   title       String?
   description String
   status      TaskStatus  @default(PENDING)
+  priority    String      @default("medium")
   metadata    Json?
+  result      String?
+  error       String?
   user        User?       @relation(fields: [userId], references: [id])
   userId      String?
+  workflow    Workflow?   @relation(fields: [workflowId], references: [id])
+  workflowId  String?
+  logs        TaskLog[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  completedAt DateTime?
+}
+
+model TaskLog {
+  id        String   @id @default(cuid())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId    String
+  level     String   @default("info")
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
 }
 
 model Workflow {
@@ -97,21 +120,43 @@ model Workflow {
   name        String
   description String?
   status      WorkflowStatus @default(PENDING)
+  trigger     String?
   steps       Json?
+  schedule    String?
+  metadata    Json?
   owner       User?          @relation(fields: [ownerId], references: [id])
   ownerId     String?
+  tasks       Task[]
+  logs        WorkflowLog[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  completedAt DateTime?
+}
+
+model WorkflowLog {
+  id        String   @id @default(cuid())
+  workflow  Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowId String
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  action    String
+  details   String?
+  metadata  Json?
+  createdAt DateTime @default(now())
 }
 
 model AIChat {
   id          String      @id @default(cuid())
   title       String?
-  conversation Json      @default("[]")
+  conversation Json       @default("[]")
   model       String
   provider    String
+  temperature Float       @default(0.7)
+  maxTokens   Int         @default(2000)
+  systemPrompt String?
   user        User?       @relation(fields: [userId], references: [id])
   userId      String?
+  tokensUsed  Int         @default(0)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
@@ -120,27 +165,54 @@ model ContentItem {
   id          String         @id @default(cuid())
   title       String
   description String?
+  content     String?
   type        ContentType
   status      ContentStatus  @default(DRAFT)
   metadata    Json?
+  publishedAt DateTime?
+  scheduledAt DateTime?
+  platforms   Json?
   user        User?          @relation(fields: [userId], references: [id])
   userId      String?
+  seoData     SEOData?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 }
 
-model PaymentSubscription {
-  id          String   @id @default(cuid())
-  provider    String
-  plan        String
-  status      String   @default("active")
-  amount      Float
-  currency    String   @default("INR")
-  metadata    Json?
-  user        User?    @relation(fields: [userId], references: [id])
-  userId      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model SEOData {
+  id          String      @id @default(cuid())
+  contentItem ContentItem @relation(fields: [contentItemId], references: [id])
+  contentItemId String    @unique
+  metaTitle   String?
+  metaDescription String?
+  keywords    Json?
+  ogImage     String?
+  canonicalUrl String?
+  readabilityScore Float?
+  seoScore    Float?
+  suggestions Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  provider        String
+  plan            String
+  status          String   @default("pending")
+  amount          Float
+  currency        String   @default("INR")
+  transactionId   String?
+  paymentMethod   String?
+  upiId           String?
+  razorpayOrderId String?
+  razorpayPaymentId String?
+  metadata        Json?
+  user            User?    @relation(fields: [userId], references: [id])
+  userId          String?
+  invoiceUrl      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model StorageObject {
@@ -148,18 +220,24 @@ model StorageObject {
   key       String   @unique
   bucket    String
   url       String
+  mimeType  String?
+  size      Int?
   metadata  Json?
   user      User?    @relation(fields: [userId], references: [id])
   userId    String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime  @updatedAt
 }
 
 model AuditLog {
   id        String   @id @default(cuid())
   action    String
+  entity    String?
+  entityId  String?
   details   String?
   metadata  Json?
+  ipAddress String?
+  userAgent String?
   user      User?    @relation(fields: [userId], references: [id])
   userId    String?
   createdAt DateTime @default(now())
@@ -173,4 +251,117 @@ model Session {
   user      User?    @relation(fields: [userId], references: [id])
   userId    String?
   createdAt DateTime @default(now())
+}
+
+model SocialAccount {
+  id         String   @id @default(cuid())
+  platform   String
+  accountId  String
+  accessToken String
+  refreshToken String?
+  metadata   Json?
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model SEOProject {
+  id          String   @id @default(cuid())
+  name        String
+  url         String
+  keywords    Json?
+  competitors Json?
+  metadata    Json?
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  eventType   String
+  eventName   String
+  properties  Json?
+  userId      String?
+  sessionId   String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([eventType])
+  @@index([eventName])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model CMSPage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  content     String?
+  metadata    Json?
+  isPublished Boolean  @default(false)
+  author      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+}
+
+model PromptTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  template    String
+  variables   Json?
+  description String?
+  isPublic    Boolean  @default(false)
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum TaskStatus {
+  PENDING
+  PLANNING
+  RUNNING
+  EXECUTING
+  REVIEWING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELED
+  STOPPED
+}
+
+enum WorkflowStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  PAUSED
+  CANCELED
+}
+
+enum ContentType {
+  BLOG
+  POST
+  AD
+  SCRIPT
+  IMAGE
+  VIDEO
+  EMAIL
+  TWEET
+  THREAD
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
 }

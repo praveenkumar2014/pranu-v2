@@ -3,7 +3,8 @@
 // JWT verification and role-based access control
 // ============================================================
 
-import { Request, Response, NextFunction } from 'express';
+import type { RequestHandler } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { AuthenticationError, AuthorizationError } from './errorHandler.js';
@@ -20,7 +21,7 @@ export interface AuthRequest extends Request {
 }
 
 // Verify JWT token
-export function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) {
+export const authenticateToken: RequestHandler = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -30,7 +31,7 @@ export function authenticateToken(req: AuthRequest, res: Response, next: NextFun
 
     try {
         const decoded = jwt.verify(token, config.JWT_SECRET) as JwtPayload;
-        req.jwtUser = decoded;
+        (req as AuthRequest).jwtUser = decoded;
         next();
     } catch (error) {
         if (error instanceof jwt.TokenExpiredError) {
@@ -38,10 +39,10 @@ export function authenticateToken(req: AuthRequest, res: Response, next: NextFun
         }
         throw new AuthenticationError('Invalid token');
     }
-}
+};
 
 // Optional authentication (doesn't fail if no token)
-export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction) {
+export const optionalAuth: RequestHandler = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
@@ -51,13 +52,13 @@ export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction
 
     try {
         const decoded = jwt.verify(token, config.JWT_SECRET) as JwtPayload;
-        req.jwtUser = decoded;
+        (req as AuthRequest).jwtUser = decoded;
     } catch (error) {
         // Invalid token, but continue without user
     }
 
     next();
-}
+};
 
 // Role-based access control
 export function requireRole(...roles: string[]) {

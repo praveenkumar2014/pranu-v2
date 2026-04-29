@@ -74,7 +74,7 @@ router.post('/refresh',
             return;
         }
 
-        const tokens = authService.refreshToken(refreshToken);
+        const tokens = await authService.refreshToken(refreshToken);
 
         res.json({
             success: true,
@@ -89,7 +89,7 @@ router.post('/logout',
         const { refreshToken } = req.body;
 
         if (refreshToken) {
-            authService.logout(refreshToken);
+            await authService.logout(refreshToken);
         }
 
         res.json({
@@ -104,7 +104,7 @@ router.post('/logout-all',
     authenticateToken,
     asyncHandler(async (req: AuthRequest, res: Response) => {
         const userId = req.jwtUser!.userId;
-        authService.logoutAll(userId);
+        await authService.logoutAll(userId);
 
         res.json({
             success: true,

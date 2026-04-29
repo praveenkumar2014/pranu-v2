@@ -158,6 +158,18 @@ export class UserService {
         await this.db.refreshToken.deleteMany({ where: { userId } });
         logger.info(`All tokens revoked for user: ${userId}`);
     }
+
+    async updatePassword(userId: string, newPassword: string): Promise<Omit<PrismaUser, 'password'>> {
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        const updated = await this.db.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword },
+            include: { role: true },
+        });
+        const { password, ...userWithoutPassword } = updated;
+        logger.info(`Password updated for user: ${userId}`);
+        return userWithoutPassword;
+    }
 }
 
 export const userService = new UserService();

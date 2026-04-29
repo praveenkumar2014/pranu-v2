@@ -29,7 +29,10 @@ router.post('/roles',
         body('permissions').isArray().withMessage('Permissions must be an array of strings'),
     ]),
     asyncHandler(async (req: AuthRequest, res: Response) => {
-        const { name, description, permissions } = req.body;
+        const { name, description } = req.body;
+        const permissions = Array.isArray(req.body.permissions)
+            ? req.body.permissions.map(String)
+            : [];
         const role = await roleService.createRole(name, description, permissions);
         res.status(201).json({ success: true, data: role });
     })
@@ -42,7 +45,9 @@ router.put('/roles/:id',
     ]),
     asyncHandler(async (req: AuthRequest, res: Response) => {
         const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-        const { permissions } = req.body;
+        const permissions = Array.isArray(req.body.permissions)
+            ? req.body.permissions.map(String)
+            : [];
         const role = await roleService.updateRolePermissions(id, permissions);
         res.json({ success: true, data: role });
     })
@@ -83,7 +88,11 @@ router.put('/users/:id',
     ]),
     asyncHandler(async (req: AuthRequest, res: Response) => {
         const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-        const user = await userService.updateUser(id, req.body);
+        const updates = {
+            name: req.body.name,
+            email: req.body.email,
+        };
+        const user = await userService.updateUser(id, updates);
         res.json({ success: true, data: user });
     })
 );

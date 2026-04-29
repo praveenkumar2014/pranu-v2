@@ -94,21 +94,21 @@ export class AuthService {
         }
 
         // Revoke old refresh token
-        userService.revokeRefreshToken(refreshToken);
+        await userService.revokeRefreshToken(refreshToken);
 
         // Generate new tokens - use 'user' as default role
         return this.generateTokens(user.id, user.email, 'user');
     }
 
     // Logout (revoke refresh token)
-    logout(refreshToken: string): void {
-        userService.revokeRefreshToken(refreshToken);
+    async logout(refreshToken: string): Promise<void> {
+        await userService.revokeRefreshToken(refreshToken);
         logger.info('User logged out');
     }
 
     // Logout from all devices
-    logoutAll(userId: string): void {
-        userService.revokeAllUserTokens(userId);
+    async logoutAll(userId: string): Promise<void> {
+        await userService.revokeAllUserTokens(userId);
         logger.info(`User logged out from all devices: ${userId}`);
     }
 
@@ -161,19 +161,17 @@ export class AuthService {
             throw new ValidationError('New password must be at least 8 characters');
         }
 
-        // Update password (need to access database directly)
+        // Update password
         await this.updateUserPassword(userId, newPassword);
 
         // Revoke all tokens
-        this.logoutAll(userId);
+        await this.logoutAll(userId);
 
         logger.info(`Password changed for user: ${userId}`);
     }
 
     private async updateUserPassword(userId: string, newPassword: string) {
-        // This would need to be added to UserService
-        // For now, we'll throw an error
-        throw new Error('Password update not yet implemented in UserService');
+        return userService.updatePassword(userId, newPassword);
     }
 }
 
