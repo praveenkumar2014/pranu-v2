@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    ports:
+      - "4000:4000"
+      - "4001:4001"
+    volumes:
+      - ./server:/app
+      - workspace-data:/tmp/pranu-workspace
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      - SANDBOX_ENABLED=true
+      - WORKSPACE_PATH=/tmp/pranu-workspace
+    depends_on:
+      - sandbox
+
+  sandbox:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.agent
+    volumes:
+      - workspace-data:/workspace
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    environment:
+      - NEXT_PUBLIC_API_URL=http://server:4000
+    depends_on:
+      - server
+
+volumes:
+  workspace-data:

@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+    --color-pranu-bg: #0a0a0f;
+    --color-pranu-surface: #12121a;
+    --color-pranu-surface-2: #1a1a28;
+    --color-pranu-border: #2a2a3a;
+    --color-pranu-text: #e0e0e8;
+    --color-pranu-text-muted: #8888a0;
+    --color-pranu-cyan: #00fff2;
+    --color-pranu-purple: #bd00ff;
+    --color-pranu-blue: #3b82f6;
+    --color-pranu-amber: #f59e0b;
+    --color-pranu-red: #ef4444;
+    --color-pranu-green: #22c55e;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--color-pranu-bg);
+    color: var(--color-pranu-text);
+    font-family: var(--font-sans);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-pranu-border);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-pranu-text-muted);
+}
+
+/* Animation keyframes */
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-in {
+    animation: slide-in 0.2s ease-out;
+}

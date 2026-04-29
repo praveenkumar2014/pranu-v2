@@ -1,0 +1,22 @@
+FROM node:20-slim
+
+# Install system tools
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    git \
+    curl \
+    ripgrep \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -s /bin/bash pranu
+
+# Set working directory
+WORKDIR /workspace
+
+# Switch to non-root user
+USER pranu
+
+# Keep container alive
+CMD ["tail", "-f", "/dev/null"]

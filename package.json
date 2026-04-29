@@ -1,0 +1,22 @@
+{
+    "name": "pranu-v2",
+    "version": "1.0.0",
+    "private": true,
+    "description": "PRANU v2 - Multi-Agent Autonomous AI Coding System",
+    "scripts": {
+        "dev": "concurrently \"pnpm --filter server dev\" \"pnpm --filter frontend dev\"",
+        "dev:server": "pnpm --filter server dev",
+        "dev:frontend": "pnpm --filter frontend dev",
+        "build": "pnpm --filter shared build && pnpm --filter server build && pnpm --filter frontend build"
+    },
+    "devDependencies": {
+        "concurrently": "^9.1.0",
+        "typescript": "^5.7.0"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "better-sqlite3",
+            "esbuild"
+        ]
+    }
+}
