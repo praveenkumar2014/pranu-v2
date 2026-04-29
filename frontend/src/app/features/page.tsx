@@ -6,8 +6,8 @@
 
 import { motion } from 'framer-motion';
 import { MessageSquare, Code2, FileText, Share2, Search, Workflow, Shield, BarChart3, Zap, Globe, Cpu } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
 const features = [
     {

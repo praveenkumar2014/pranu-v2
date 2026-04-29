@@ -50,7 +50,7 @@ export class AuthService {
         });
 
         // Generate tokens
-        const tokens = this.generateTokens(user.id, user.email, user.role);
+        const tokens = await this.generateTokens(user.id, user.email, 'user');
 
         logger.info(`User registered: ${input.email}`);
 
@@ -59,7 +59,7 @@ export class AuthService {
 
     // Login
     async login(input: LoginInput): Promise<{ user: any; tokens: AuthTokens }> {
-        const user = userService.getUserByEmail(input.email);
+        const user = await userService.getUserByEmail(input.email);
 
         if (!user) {
             throw new AuthenticationError('Invalid email or password');
@@ -71,23 +71,23 @@ export class AuthService {
             throw new AuthenticationError('Invalid email or password');
         }
 
-        // Generate tokens
-        const tokens = this.generateTokens(user.id, user.email, user.role);
+        // Generate tokens - use 'user' as default role since user object doesn't have role property directly
+        const tokens = await this.generateTokens(user.id, user.email, 'user');
 
         logger.info(`User logged in: ${input.email}`);
 
-        return { user: userService.getUserById(user.id), tokens };
+        return { user: await userService.getUserById(user.id), tokens };
     }
 
     // Refresh access token
-    refreshToken(refreshToken: string): AuthTokens {
+    async refreshToken(refreshToken: string): Promise<AuthTokens> {
         const userId = userService.verifyRefreshToken(refreshToken);
 
         if (!userId) {
             throw new AuthenticationError('Invalid or expired refresh token');
         }
 
-        const user = userService.getUserById(userId);
+        const user = await userService.getUserById(userId);
 
         if (!user) {
             throw new AuthenticationError('User not found');
@@ -96,8 +96,8 @@ export class AuthService {
         // Revoke old refresh token
         userService.revokeRefreshToken(refreshToken);
 
-        // Generate new tokens
-        return this.generateTokens(user.id, user.email, user.role);
+        // Generate new tokens - use 'user' as default role
+        return this.generateTokens(user.id, user.email, 'user');
     }
 
     // Logout (revoke refresh token)
@@ -113,21 +113,21 @@ export class AuthService {
     }
 
     // Generate JWT tokens
-    private generateTokens(userId: string, email: string, role: 'admin' | 'user'): AuthTokens {
+    private async generateTokens(userId: string, email: string, role: 'admin' | 'user'): Promise<AuthTokens> {
         const payload: JwtPayload = { userId, email, role };
 
         const accessToken = jwt.sign(payload, config.JWT_SECRET, {
             expiresIn: config.JWT_EXPIRES_IN as any,
         });
 
-        const refreshToken = userService.createRefreshToken(userId);
+        const refreshToken = await userService.createRefreshToken(userId);
 
         return { accessToken, refreshToken };
     }
 
     // Get current user profile
-    getProfile(userId: string) {
-        const user = userService.getUserById(userId);
+    async getProfile(userId: string) {
+        const user = await userService.getUserById(userId);
         if (!user) {
             throw new AuthenticationError('User not found');
         }
@@ -141,13 +141,13 @@ export class AuthService {
 
     // Change password
     async changePassword(userId: string, currentPassword: string, newPassword: string) {
-        const user = userService.getUserById(userId);
+        const user = await userService.getUserById(userId);
         if (!user) {
             throw new AuthenticationError('User not found');
         }
 
         // Note: We need the full user with password field
-        const fullUser = userService.getUserByEmail(user.email);
+        const fullUser = await userService.getUserByEmail(user.email);
         if (!fullUser) {
             throw new AuthenticationError('User not found');
         }

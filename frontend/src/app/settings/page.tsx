@@ -6,8 +6,8 @@
 
 import { motion } from 'framer-motion';
 import { User, Bell, Shield, Palette, Key, Database, Globe } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
 export default function SettingsPage() {
     return (
@@ -33,11 +33,10 @@ export default function SettingsPage() {
                             ].map((item) => (
                                 <button
                                     key={item.label}
-                                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition ${
-                                        item.active
-                                            ? 'bg-cyan-500/10 text-cyan-400'
-                                            : 'text-slate-400 hover:bg-slate-900 hover:text-white'
-                                    }`}
+                                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition ${item.active
+                                        ? 'bg-cyan-500/10 text-cyan-400'
+                                        : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                                        }`}
                                 >
                                     <item.icon className="h-5 w-5" />
                                     <span className="text-sm font-medium">{item.label}</span>

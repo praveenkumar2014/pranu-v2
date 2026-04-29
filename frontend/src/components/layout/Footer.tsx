@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
-export function Footer() {
+export default function Footer() {
     return (
         <motion.footer
             initial={{ opacity: 0, y: 20 }}

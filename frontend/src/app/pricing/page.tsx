@@ -6,8 +6,8 @@
 
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Crown, Rocket } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
 const plans = [
     {
@@ -94,8 +94,8 @@ export default function PricingPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                             className={`relative rounded-[32px] border p-8 ${plan.popular
-                                    ? 'border-cyan-500 bg-slate-900/90 shadow-xl shadow-cyan-500/20'
-                                    : 'border-slate-800 bg-slate-900/50'
+                                ? 'border-cyan-500 bg-slate-900/90 shadow-xl shadow-cyan-500/20'
+                                : 'border-slate-800 bg-slate-900/50'
                                 }`}
                         >
                             {plan.popular && (
@@ -128,8 +128,8 @@ export default function PricingPage() {
 
                             <button
                                 className={`w-full rounded-full py-3 text-sm font-semibold transition ${plan.popular
-                                        ? 'bg-cyan-500 text-slate-950 hover:bg-cyan-400'
-                                        : 'border border-slate-700 bg-slate-800 text-white hover:bg-slate-700'
+                                    ? 'bg-cyan-500 text-slate-950 hover:bg-cyan-400'
+                                    : 'border border-slate-700 bg-slate-800 text-white hover:bg-slate-700'
                                     }`}
                             >
                                 {plan.cta}

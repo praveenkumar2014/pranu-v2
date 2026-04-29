@@ -6,8 +6,8 @@
 
 import { motion } from 'framer-motion';
 import { Play, Pause, Square, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
 const workflows = [
     {
@@ -135,13 +135,12 @@ export default function WorkflowsPage() {
                                         <div className="w-32">
                                             <div className="h-2 rounded-full bg-slate-800">
                                                 <div
-                                                    className={`h-2 rounded-full ${
-                                                        workflow.status === 'failed'
-                                                            ? 'bg-red-500'
-                                                            : workflow.status === 'completed'
+                                                    className={`h-2 rounded-full ${workflow.status === 'failed'
+                                                        ? 'bg-red-500'
+                                                        : workflow.status === 'completed'
                                                             ? 'bg-green-500'
                                                             : 'bg-blue-500'
-                                                    }`}
+                                                        }`}
                                                     style={{ width: `${progress}%` }}
                                                 />
                                             </div>

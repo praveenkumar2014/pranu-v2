@@ -3,23 +3,29 @@
 // ============================================================
 
 import type { Metadata } from 'next';
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
     title: 'GS Groups AI Studio',
-    description: 'Enterprise-ready AI SaaS platform for code, content, marketing, and automation.',
+    description: 'AI-powered platform for building, deploying, and scaling intelligent applications',
     metadataBase: new URL('http://localhost:3000'),
     icons: {
-        icon: '/gslogo.png',
-        apple: '/gslogo.png',
+        icon: 'https://www.gsgroups.net/gslogo.png',
+        apple: 'https://www.gsgroups.net/gslogo.png',
     },
     openGraph: {
         title: 'GS Groups AI Studio',
-        description: 'Enterprise-ready AI SaaS platform for code, content, marketing, and automation.',
+        description: 'AI-powered platform for building, deploying, and scaling intelligent applications',
         url: 'https://app.gsgroups.net',
         siteName: 'GS Groups AI Studio',
-        images: '/gslogo.png',
+        images: [
+            {
+                url: 'https://www.gsgroups.net/gslogo.png',
+                width: 1200,
+                height: 630,
+            },
+        ],
         locale: 'en_US',
         type: 'website',
     },
