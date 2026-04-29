@@ -50,11 +50,10 @@ export default function SocialMediaPage() {
                                         <button
                                             key={platform.id}
                                             onClick={() => togglePlatform(platform.id)}
-                                            className={`flex items-center gap-2 rounded-xl px-4 py-3 transition ${
-                                                isSelected
+                                            className={`flex items-center gap-2 rounded-xl px-4 py-3 transition ${isSelected
                                                     ? `${platform.bg} ${platform.color} border-2 border-current`
                                                     : 'border border-slate-700 bg-slate-800 text-slate-400 hover:border-slate-600'
-                                            }`}
+                                                }`}
                                         >
                                             <Icon className="h-5 w-5" />
                                             <span className="text-sm font-medium">{platform.name}</span>
@@ -156,11 +155,10 @@ export default function SocialMediaPage() {
                                             <p className="text-sm font-medium text-white">{post.platform}</p>
                                             <p className="text-xs text-slate-400">{post.time}</p>
                                         </div>
-                                        <span className={`rounded-full px-2 py-1 text-xs ${
-                                            post.status === 'Published' ? 'bg-green-500/10 text-green-400' :
-                                            post.status === 'Scheduled' ? 'bg-blue-500/10 text-blue-400' :
-                                            'bg-slate-700 text-slate-400'
-                                        }`}>
+                                        <span className={`rounded-full px-2 py-1 text-xs ${post.status === 'Published' ? 'bg-green-500/10 text-green-400' :
+                                                post.status === 'Scheduled' ? 'bg-blue-500/10 text-blue-400' :
+                                                    'bg-slate-700 text-slate-400'
+                                            }`}>
                                             {post.status}
                                         </span>
                                     </div>
